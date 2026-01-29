@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
         let verdict = false;
         let results: boolean[] = [];
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         if (type === "boolean" || type === "short_answer") {
 
@@ -39,8 +39,19 @@ ${JSON.stringify(tests, null, 2)}
   "allPass": true | false
 }
       `;
+            let result;
+            try {
+                result = await model.generateContent(fullPrompt);
+            } catch (e: any) {
+                return NextResponse.json(
+                    {
+                        error: "Gemini API error",
+                        message: "Проблема с Gemini API ключом или превышен лимит запросов"
+                    },
+                    { status: 503 }
+                );
+            }
 
-            const result = await model.generateContent(checkPrompt);
             const rawResponse = result.response.text()
             const cleaned = rawResponse.replace("```json", "").replace("```", "");
             const data = JSON.parse(cleaned);

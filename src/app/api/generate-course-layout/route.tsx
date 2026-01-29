@@ -8,39 +8,56 @@ import axios from "axios";
 
 const PROMPT = `
 Сгенерируй учебный курс на основе следующих данных. 
+
 Ответ должен строго соответствовать JSON-схеме:
 
 {
   "course": {
-    "name": "string",              // Название курса
-    "description": "string",       // Описание курса
-    "category": "string",          // Категория
-    "level": "string",             // Уровень сложности
-    "includeVideo": "boolean",     // Включать ли видео
-    "noOfChapters": "number",      // Количество глав
+    "name": "string",
+    "description": "string",
+    "category": "string",
+    "level": "string",
+    "includeVideo": boolean,
+    "noOfChapters": number,
     "chapters": [
       {
-        "chapterName": "string",   // Название главы
-        "duration": "string",      // Длительность
-        "topics": [
-          "string"                 // Список тем
-        ],
-        "imagePrompt": "string"    // Краткое описание для генерации изображения
+        "chapterName": "string",
+        "duration": "string",
+        "topics": ["string"],
+        "imagePrompt": "string"
       }
     ]
   }
 }
 
-⚠️ Важно:
-- Ответ должен быть только в формате JSON.
-- Используй русский язык для описаний и названий.
-- Допускается использование английских слов (например, в названиях курсов или тем).
+ОГРАНИЧЕНИЯ:
+- В КАЖДОЙ главе НЕ БОЛЕЕ 4 тем (topics)
+- Верни ТОЛЬКО JSON
+- Без markdown
+- Без комментариев
+- Используй русский язык
 
-Входные данные пользователя: 
+Входные данные пользователя:
 `;
 
+function safeParseJSON(raw: string) {
+    if (!raw) return null;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1) {
+        console.error("❌ No JSON braces:", raw);
+        return null;
+    }
+
+    try {
+        return JSON.parse(raw.slice(firstBrace, lastBrace + 1));
+    } catch (e) {
+        console.error("❌ JSON parse error:", raw);
+        return null;
+    }
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -51,70 +68,93 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const genAI = new GoogleGenerativeAI(formData.apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+        });
 
-        // Формируем полный промпт
         const fullPrompt = PROMPT + JSON.stringify(formData);
 
-        // Генерация курса
-        const result = await model.generateContent(fullPrompt);
+        let result;
+        try {
+            result = await model.generateContent(fullPrompt);
+        } catch (e: any) {
+            return NextResponse.json(
+                {
+                    error: "Gemini API error",
+                    message: "Проблема с Gemini API ключом или превышен лимит запросов"
+                },
+                { status: 503 }
+            );
+        }
+        const raw = result.response.text();
 
-        const rawResp = result.response.text();
-        const cleaned = rawResp.replace("```json", "").replace("```", "");
-        const jsonResp = JSON.parse(cleaned);
-        console.log(jsonResp.course)
-        const imagePrompt = jsonResp.course?.chapters[0].imagePrompt;
+        const jsonResp = safeParseJSON(raw);
 
-        console.log('imagePrompt===')
-        console.log(imagePrompt)
+        if (!jsonResp?.course) {
+            console.error("❌ Invalid course JSON:", raw);
+            return NextResponse.json(
+                { error: "Ошибка генерации курса" },
+                { status: 500 }
+            );
+        }
 
-        const bannerImageUrl = await generateImage(imagePrompt);
 
+        jsonResp.course.chapters = jsonResp.course.chapters.map((ch: any) => ({
+            ...ch,
+            topics: Array.isArray(ch.topics) ? ch.topics.slice(0, 4) : [],
+        }));
+
+        const imagePrompt = jsonResp.course.chapters[0]?.imagePrompt;
+
+        let bannerImageUrl: string | null = null;
+        try {
+            bannerImageUrl = imagePrompt
+                ? await generateImage(imagePrompt)
+                : null;
+        } catch (e) {
+            console.warn("⚠️ Banner image skipped:", e);
+        }
 
         const cid = uuidv4();
+
         await db.insert(coursesTable).values({
             ...formData,
             courseJson: jsonResp,
             userEmail: user.email,
             cid,
-            label: formData?.name,
-            bannerImageUrl: bannerImageUrl,
+            label: jsonResp.course.name,
+            bannerImageUrl,
         });
 
         return NextResponse.json({ courseId: cid });
     } catch (err: any) {
-        console.error("❌ Ошибка в generate-course-layout:", err);
+        console.error("❌ generate-course-layout error:", err);
 
-
-        if (err?.status === 503) {
-            return NextResponse.json(
-                { error: "Модель перегружена. Попробуйте позже." },
-                { status: 503 }
-            );
-        }
-        if (err?.response?.status === 429) {
-            return NextResponse.json(
-                { error: "🚦 Лимит токенов на API-ключ достигнут. Попробуйте позже." },
-                { status: 429 }
-            );
-        }
-
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: "COURSE_GENERATION_FAILED",
+                message: err.message || "Неизвестная ошибка сервера"
+            },
+            { status: 500 }
+        );
     }
 }
 
 const generateImage = async (imagePrompt: string) => {
-
-
-    const result = await axios.get(`https://api.unsplash.com/search/photos?query=${imagePrompt}&per_page=1`, {
-
-        headers: {
-            Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
-        },
-    });
+    const result = await axios.get(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+            imagePrompt
+        )}&per_page=1`,
+        {
+            headers: {
+                Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+            },
+        }
+    );
 
     if (!result.data?.results?.length) {
-        throw new Error("Image not found for prompt: " + imagePrompt);
+        return null;
     }
 
     return result.data.results[0].urls.regular;

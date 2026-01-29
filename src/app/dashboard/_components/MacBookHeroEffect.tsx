@@ -3,9 +3,9 @@ import { MacbookScroll } from "@/components/ui/macbook-scroll";
 import {TextGenerateEffect} from "@/components/ui/text-generate-effect";
 
 export function MacbookScrollDemo() {
-    const words = `Добро пожаловать на панель управления  Learnify-AI`;
+    const words = `Добро пожаловать в мастерскую КурсоГен`;
     return (
-        <div className="w-full overflow-hidden bg-white dark:bg-[#0B0B0F]">
+        <div className="w-full  overflow-hidden bg-white dark:bg-[#0B0B0F]">
             <MacbookScroll
                 title={
                     <span>

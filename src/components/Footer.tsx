@@ -1,6 +1,7 @@
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import Image from "next/image";
-import {FaVk, FaYoutube} from "react-icons/fa";
+import {FaPhone, FaVk, FaYoutube} from "react-icons/fa";
+import {FaHouseMedical} from "react-icons/fa6";
 
 const Footer = () => {
     return (
@@ -21,9 +22,9 @@ const Footer = () => {
                 <div>
                     <h2 className="font-semibold mb-3">Курсы</h2>
                     <ul className="space-y-2 text-sm">
-                        <li><a href="/workspace/courses" className="hover:underline">Все курсы</a></li>
+                        <li><a href="/workspace/explore" className="hover:underline">Все курсы</a></li>
                         <li><a href="/workspace" className="hover:underline">Создать курс</a></li>
-                        <li><a href="/" className="hover:underline">Популярные темы</a></li>
+                        <li><a href="/workspace/explore" className="hover:underline">Популярные темы</a></li>
                     </ul>
                 </div>
 
@@ -32,8 +33,8 @@ const Footer = () => {
                     <h2 className="font-semibold mb-3">О компании</h2>
                     <ul className="space-y-2 text-sm">
                         <li><a href="/about" className="hover:underline">О нас</a></li>
-                        <li><a href="/blog" className="hover:underline">Блог</a></li>
-                        <li><a href="/contact" className="hover:underline">Контакты</a></li>
+                        <li><a href="#support" className="hover:underline">Поддержка</a></li>
+                        <li><a href="#support" className="hover:underline">Контакты</a></li>
                     </ul>
                 </div>
 
@@ -46,13 +47,25 @@ const Footer = () => {
                         <a href="#" aria-label="Instagram" className="hover:text-gray-200"><FaYoutube size={24} /></a>
                         <a href="#" aria-label="vK" className="hover:text-gray-200"><FaVk size={24} /></a>
                     </div>
+
+                    <h2 className="font-semibold my-3 flex items-center gap-2">
+                        <FaHouseMedical/>
+                        Адрес Штаб Квартиры: </h2>
+                    <p className='text-gray-200 cursor-pointer font-semibold text-sm '>
+                        <a target="_blank" href="https://google.com">Город Томск, Улица Ленина 2</a>
+                    </p>
+                    <h2 className="font-semibold my-3 flex items-center gap-2">
+                        <FaPhone/>
+                        Номер телефона: </h2>
+                    <p className='text-gray-200 cursor-pointer font-semibold text-sm '>
+                        <a target="_blank" href="https://google.com">+8-952-163-71-68</a>
+                    </p>
                 </div>
 
             </div>
 
-            {/* Bottom copyright */}
             <div className="bg-orange-700 text-center py-4 text-sm">
-                © {new Date().getFullYear()} Learnify. Все права защищены.
+                © {new Date().getFullYear()} КурсоГен. Все права защищены.
             </div>
         </footer>
     );

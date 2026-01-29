@@ -6,7 +6,6 @@ import { eq, and } from "drizzle-orm";
 import getServerUser from "@/lib/auth-server";
 import { generatePdf } from "@/lib/downloadPDF";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
     try {
@@ -45,8 +44,9 @@ export async function POST(req: NextRequest) {
 
 
         const courseData = courseRow[0].courseJson?.course; // твой JSON
-
-
+        console.log('courseRow===')
+        console.log(courseRow)
+        const genAI = new GoogleGenerativeAI(courseRow[0].apiKey);
 
         const chapter = courseData.chapters?.[groupIndex] || courseData.chapters[groupIndex].topics[chapterIndex]; // если у тебя 1 уровень групп = главы
 
@@ -94,7 +94,18 @@ export async function POST(req: NextRequest) {
 
 
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const result = await model.generateContent(prompt);
+        let result;
+        try {
+            result = await model.generateContent(fullPrompt);
+        } catch (e: any) {
+            return NextResponse.json(
+                {
+                    error: "Gemini API error",
+                    message: "Проблема с Gemini API ключом или превышен лимит запросов"
+                },
+                { status: 503 }
+            );
+        }
 
         let raw = result.response.text().replace(/```json|```/g, "").trim();
         console.log('raw===')

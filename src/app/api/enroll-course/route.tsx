@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
             .values({
                 cid: courseId,
                 userEmail: user?.email
-            }).returning(enrolledCourseTable)
+            }).returning()
 
         return NextResponse.json(result)
     }
@@ -33,39 +33,44 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    const {searchParams}  = new URL(req.url)
+    const { searchParams } = new URL(req.url);
+    const courseId = searchParams.get('courseId');
+    const user = await getServerUser();
 
-    const courseId = searchParams?.get('courseId')
-    const user= await getServerUser()
-    console.log(user)
-    console.log(courseId)
-
-    if (courseId === 0) {
-        const result =  await db.select().from(coursesTable)
-            .where(sql`${coursesTable.courseContent}::jsonb != '{}' : jsonb`)
-        console.log(result)
-
-        return NextResponse.json(result[0])
+    if (!user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (courseId) {
-        const result =  await db.select().from(coursesTable)
-            .where(and(eq(enrolledCourseTable.userEmail, user?.email),
-                eq(enrolledCourseTable.cid, courseId)
-                ))
-            .innerJoin(enrolledCourseTable, eq(coursesTable.cid, enrolledCourseTable.cid))
-            .orderBy(desc(enrolledCourseTable.id))
-        console.log(result)
+        const result = await db
+            .select()
+            .from(enrolledCourseTable)
+            .innerJoin(
+                coursesTable,
+                eq(enrolledCourseTable.cid, coursesTable.cid)
+            )
+            .where(
+                and(
+                    eq(enrolledCourseTable.userEmail, user.email),
+                    eq(enrolledCourseTable.cid, courseId)
+                )
+            )
+            .orderBy(desc(enrolledCourseTable.id));
 
-        return NextResponse.json(result[0])
-    } else {
-        const result = await db.select().from(coursesTable)
-            .where(eq(enrolledCourseTable.userEmail, user?.email))
-            .innerJoin(enrolledCourseTable, eq(coursesTable.cid, enrolledCourseTable.cid))
-            .orderBy(desc(enrolledCourseTable.id))
-        return NextResponse.json(result)
+        return NextResponse.json(result[0] ?? null);
     }
 
+    const result = await db
+        .select()
+        .from(enrolledCourseTable)
+        .innerJoin(
+            coursesTable,
+            eq(enrolledCourseTable.cid, coursesTable.cid)
+        )
+        .where(eq(enrolledCourseTable.userEmail, user.email))
+        .orderBy(desc(enrolledCourseTable.id));
+
+    return NextResponse.json(result);
 }
 
 export async function PUT(req) {
@@ -75,7 +80,7 @@ export async function PUT(req) {
     const result = await db.update(enrolledCourseTable).set({
         completedChapters: completedChapter
     }).where(and(eq(enrolledCourseTable.cid, courseId),
-    eq(enrolledCourseTable.userEmail, user?.email))).returning(enrolledCourseTable)
+    eq(enrolledCourseTable.userEmail, user?.email))).returning()
 
     return NextResponse.json(result)
 

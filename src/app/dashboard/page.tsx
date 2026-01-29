@@ -4,21 +4,11 @@ import { MacbookScrollDemo} from "@/app/dashboard/_components/MacBookHeroEffect"
 import {WobbleCard} from "@/components/ui/wobble-card";
 import EnrolledCourseList from "@/components/EnrolledCourseList";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Line} from "react-chartjs-2";
+
 import {useAuth} from "../../../context/useAuth";
 import axios from "axios";
 import {LoaderOne} from "@/components/ui/loader";
-import {
-    Chart as ChartJS,
-    LineElement,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-} from "chart.js";
+
 import Footer from "@/components/Footer";
 import {FlipWords} from "@/components/ui/flip-words";
 import {FloatingNavDemo} from "@/app/dashboard/_components/FloatingNavbar";
@@ -26,37 +16,56 @@ import {Navbarik} from "@/app/dashboard/_components/Navbarik";
 import CourseList from "@/components/CourseList";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
+import MobileNavbar from "@/app/dashboard/_components/MobileNavbar";
+import {ChartContainer, ChartTooltip, ChartTooltipContent} from "@/components/ui/chart";
+import {Area, AreaChart, CartesianGrid, XAxis} from "recharts";
+import {Skeleton} from "@/components/ui/skeleton";
+import FloatingAssistant from "@/components/FloatingAssistant";
 
-ChartJS.register(
-    LineElement,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-);
+
+const chartConfig = {
+    created: {
+        label: "Созданные курсы",
+        color: "hsl(24 94% 50%)",
+    },
+    enrolled: {
+        label: "Записанные курсы",
+        color: "hsl(142 76% 36%)",
+    },
+    homeworks: {
+        label: "Домашние задания",
+        color: "hsl(262 83% 58%)",
+    },
+    practice: {
+        label: "Практические задания",
+        color: "hsl(48 96% 53%)",
+    },
+};
+
 const DashboardPage = () => {
     const { user, loading } = useAuth();
+    const [pending, setPending] = useState<boolean>(false)
     const router = useRouter()
     const [courses, setCourses] = useState<any[]>([]);
     const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
 
     useEffect(() => {
         if (!loading && !user) {
-            router.push("/sign-up"); // ✅ редирект если не авторизован
+            router.push("/sign-up");
         }
     }, [user, loading, router]);
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setPending(true)
                 const coursesRes = await axios.get("/api/courses");
                 const enrolledRes = await axios.get("/api/enroll-course");
 
                 setCourses(coursesRes.data || []);
                 setEnrolledCourses(enrolledRes.data || []);
+                setPending(false)
             } catch (err) {
+                setPending(false)
                 console.error("Ошибка загрузки профиля", err);
             }
         };
@@ -72,15 +81,15 @@ const DashboardPage = () => {
         );
     console.log(user)
 
-    // месяцы
+
     const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
-    // данные по созданным курсам
+
     const createdByMonth = months.map((_, i) =>
         courses.filter((c) => new Date(c.createdAt).getMonth() === i).length
     );
 
-    // данные по подпискам
+
     const enrolledByMonth = months.map((_, i) =>
         enrolledCourses.filter((e) => {
             const date = e.enrolledCourse?.createdAt || e.createdAt;
@@ -153,12 +162,22 @@ const DashboardPage = () => {
             },
         ],
     };
-
+    const chartData = months.map((month, index) => ({
+        month,
+        created: createdByMonth[index],
+        enrolled: enrolledByMonth[index],
+        homeworks: homeworksByMonth[index],
+        practice: practiceByMonth[index],
+    }));
     return (
         <div className='flex-col flex gap-4 relative w-full'>
-            <Navbarik/>
+            <div className="absolute z-20  h-[500px] w-[500px] bg-orange-500 blur-[140px] rounded-full top-40 -left-40" />
+            <div className="absolute z-20 h-[400px] w-[400px] bg-orange-500 blur-[140px] rounded-full top-20 right-[-200px]" />
 
-            <div>
+            <Navbarik/>
+            <MobileNavbar/>
+
+            <div >
                 <MacbookScrollDemo/>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto w-full">
@@ -211,7 +230,13 @@ const DashboardPage = () => {
             </div>
 
             <CourseList/>
-            <div className="grid grid-cols-1 mt-10 md:grid-cols-4 gap-6">
+            {pending ?   <div className="grid grid-cols-1 mt-10 md:grid-cols-4 gap-6">
+                <Skeleton className='w-full h-[100px] rounded-xl'/>
+                    <Skeleton className='w-full h-[100px] rounded-xl'/>
+                    <Skeleton className='w-full h-[100px] rounded-xl'/>
+                    <Skeleton className='w-full h-[100px] rounded-xl'/>
+                </div> :
+                <div className="grid grid-cols-1 mt-10 md:grid-cols-4 gap-6">
                 <Card className="shadow-md cursor-pointer transition-all hover:scale-105">
                     <CardHeader>
                         <CardTitle>Созданные курсы</CardTitle>
@@ -238,16 +263,68 @@ const DashboardPage = () => {
                     <CardContent className="text-3xl font-bold text-yellow-400">{totalPracticeTasks}</CardContent>
                 </Card>
             </div>
+            }
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Аналитика по месяцам</CardTitle>
+                    <CardTitle>Аналитика за текущий год</CardTitle>
                 </CardHeader>
+
                 <CardContent>
-                    <div className="mx-auto w-full flex items-center justify-center max-w-7xl">
-                        <Line data={data} />
-                    </div>
+                    {pending ?
+                        <Skeleton className='w-full h-[50vh] rounded-xl'/>
+                        :    <ChartContainer config={chartConfig} className="h-[320px] w-full">
+                        <AreaChart data={chartData} margin={{ left: 12, right: 12 }}>
+                            <CartesianGrid vertical={false} />
+
+                            <XAxis
+                                dataKey="month"
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                            />
+
+                            <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent indicator="line" />}
+                            />
+
+                            <Area
+                                dataKey="created"
+                                type="natural"
+                                fill="var(--color-created)"
+                                stroke="var(--color-created)"
+                                fillOpacity={0.35}
+                            />
+
+                            <Area
+                                dataKey="enrolled"
+                                type="natural"
+                                fill="var(--color-enrolled)"
+                                stroke="var(--color-enrolled)"
+                                fillOpacity={0.35}
+                            />
+
+                            <Area
+                                dataKey="homeworks"
+                                type="natural"
+                                fill="var(--color-homeworks)"
+                                stroke="var(--color-homeworks)"
+                                fillOpacity={0.3}
+                            />
+
+                            <Area
+                                dataKey="practice"
+                                type="natural"
+                                fill="var(--color-practice)"
+                                stroke="var(--color-practice)"
+                                fillOpacity={0.3}
+                            />
+                        </AreaChart>
+                    </ChartContainer>}
+
                 </CardContent>
             </Card>
+
 
             <div>
                 <h2 className='font-bold text-lg px-6 mt-5'>Мое обучение</h2>
@@ -264,7 +341,7 @@ const DashboardPage = () => {
                     образование  с  <span className='font-semibold text-orange-500'>Learnify-AI</span>
                 </div>
             </div>
-
+            <FloatingAssistant/>
             <Footer/>
         </div>
     )

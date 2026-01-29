@@ -28,7 +28,8 @@ export async function GET(req: Request) {
                 email: user.email,
                 userName: user.userName,
                 createdAt: user.createdAt,
-                avatarUrl: user?.avatarUrl
+                avatarUrl: user?.avatarUrl,
+                credits: user?.credits
             },
         })
     } catch (err: any) {

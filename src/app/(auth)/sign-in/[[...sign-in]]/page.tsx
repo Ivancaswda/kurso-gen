@@ -99,7 +99,7 @@ function SignIn() {
                 </div>
 
                 <h2 className="text-2xl font-bold text-center text-orange-700 dark:text-orange-300">
-                    Добро пожаловать в <span className="text-orange-500">Learnify-AI</span>
+                    Добро пожаловать в <span className="text-orange-500">КурсоГен</span>
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-500">
                     Войдите в аккаунт, чтобы продолжить

@@ -1,26 +1,21 @@
 
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import "./globals.css";
 import {AuthProvider} from "../../context/AuthProvider";
 import {Toaster} from "@/components/ui/sonner";
 import Footer from "@/components/Footer";
 
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+    subsets: ["latin", "cyrillic"],
+    variable: "--font-inter",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
-  title: "Learnify-AI",
-  description: "Learnify lets grab best ai education together!",
+  title: "КурсоГен - Учись при помощи ИИ",
+  description: "КурсоГен позволяет вам создавать курсы, домашние работы, раздаточные материалы, практические задания и многое другое для эффективной учебы.",
 };
 
 export default function RootLayout({
@@ -37,7 +32,7 @@ export default function RootLayout({
 
               <html lang="en">
               <body
-                  className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                  className={`${inter.variable}  antialiased`}
               >
 
 

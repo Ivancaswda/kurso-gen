@@ -99,7 +99,7 @@ function Signup() {
                 </div>
 
                 <h2 className="text-2xl font-bold text-center text-orange-700 dark:text-orange-300">
-                    Создать аккаунт в <span className="text-orange-500">Learnify-AI</span>
+                    Создать аккаунт в <span className="text-orange-500">КурсоГен</span>
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-500">
                     Добро пожаловать! Заполните форму, чтобы присоединиться.

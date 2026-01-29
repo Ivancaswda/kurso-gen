@@ -3,6 +3,8 @@ import React from 'react'
 const ChapterTopicList = ({course}: any) => {
 
     const courseLayout = course?.courseJson?.course
+    console.log('courseLayout===')
+    console.log(courseLayout)
 
     return (
         <div className="space-y-8 mt-20">

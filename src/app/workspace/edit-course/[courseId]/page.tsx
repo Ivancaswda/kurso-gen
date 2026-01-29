@@ -6,6 +6,7 @@ import {toast} from "sonner";
 import CourseInfo from "@/app/workspace/edit-course/_components/CourseInfo";
 import ChapterTopicList from "@/app/workspace/edit-course/_components/ChapterTopicList";
 import {Loader2Icon} from "lucide-react";
+import {LoaderOne} from "@/components/ui/loader";
 
 const EditCoursePage = ({viewCourse}:any) => {
     const {courseId} = useParams();
@@ -28,11 +29,11 @@ const EditCoursePage = ({viewCourse}:any) => {
         }
         setLoading(false)
     }
+
     if (loading) {
-        return  <div className='flex items-center justify-center w-full h-screen'>
-
-                <Loader2Icon className='animate-spin size-lg text-orange-600'/>
-
+        return        <div className='flex items-center flex-col gap-4 h-screen justify-center w-full'>
+            <LoaderOne  />
+            Загружаем данные...
         </div>
     }
 

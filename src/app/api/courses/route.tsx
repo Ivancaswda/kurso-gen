@@ -2,7 +2,7 @@ import {NextRequest, NextResponse} from "next/server";
 import getServerUser from "@/lib/auth-server";
 import {db} from "../../../../configs/db";
 import {coursesTable} from "../../../../configs/schema";
-import {desc, eq} from "drizzle-orm";
+import {desc, eq, and} from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
         const course = result[0];
 
-        // сериализуем вручную
+
         const serializedCourse = {
             ...course,
             createdAt: course.createdAt?.toISOString(),
@@ -38,4 +38,19 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(serialized);
     }
+}
+export async function PUT(req: NextRequest) {
+    const {apiKey, courseId} = await req.json()
+
+    const user = await getServerUser()
+
+    const courseResult = await db.update(coursesTable).set({
+        apiKey: apiKey
+    }).where(eq(coursesTable.cid, courseId))
+
+
+
+    return NextResponse.json({
+        success:true
+    })
 }

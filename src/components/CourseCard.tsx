@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import Image from "next/image";
 import {Book, Loader2Icon, PlayCircle} from "lucide-react";
 import {Button} from "@/components/ui/button";
@@ -6,10 +6,12 @@ import {FaHatWizard, FaMagic} from "react-icons/fa";
 import Link from "next/link";
 import axios from "axios";
 import {toast} from "sonner";
+import {useAuth} from "../../context/useAuth";
 
-const CourseCard = ({course}: any) => {
-
+const CourseCard = ({course, getCourseList}: any) => {
+    const {user} = useAuth()
     const [loading, setLoading] = useState<boolean>(false)
+
 
     const onEnrollCourse = async () => {
         try {
@@ -22,6 +24,7 @@ const CourseCard = ({course}: any) => {
                 toast.warning('Вы уже записались на этот курс!')
             } else {
                 toast.success('Вы успешно записались на этот курс!')
+                await getCourseList()
             }
 
         } catch (error) {

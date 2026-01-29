@@ -4,7 +4,7 @@ import { db } from "../../../../configs/db";
 import { coursesTable } from "../../../../configs/schema";
 import { eq } from "drizzle-orm";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,12 +15,13 @@ export async function POST(req: NextRequest) {
         if (!courses || courses.length === 0) {
             return NextResponse.json({ error: "Курс не найден" }, { status: 404 });
         }
+        console.log('course===', courses[0])
 
         const course = courses[0];
 
-        const chapter = course.courseContent[groupIndex][chapterIndex];
+        const chapter = course.courseContent[groupIndex];
 
-
+        const genAI = new GoogleGenerativeAI(course.apiKey);
         const prompt = `
 Ты — генератор практических заданий для студентов.
 
@@ -55,8 +56,19 @@ export async function POST(req: NextRequest) {
 - "correctAnswer" должен быть коротким и точным.
 `;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const result = await model.generateContent(prompt);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        let result;
+        try {
+            result = await model.generateContent(fullPrompt);
+        } catch (e: any) {
+            return NextResponse.json(
+                {
+                    error: "Gemini API error",
+                    message: "Проблема с Gemini API ключом или превышен лимит запросов"
+                },
+                { status: 503 }
+            );
+        }
         let rawResp = result.response.text();
 
         rawResp = rawResp
@@ -73,15 +85,10 @@ export async function POST(req: NextRequest) {
         const jsonString = rawResp.substring(firstBrace, lastBrace + 1);
         const parsed = JSON.parse(jsonString);
 
-        const updatedCourseContent = course.courseContent.map(
-            (group: any, gIndex: number) => {
-                if (gIndex !== groupIndex) return group;
-                return group.map((ch: any, cIndex: number) => {
-                    if (cIndex !== chapterIndex) return ch;
-                    return { ...ch, homework: parsed };
-                });
-            }
-        );
+        const updatedCourseContent = course.courseContent.map((ch, gIndex) => {
+            if (gIndex !== groupIndex) return ch;
+            return { ...ch, homework: parsed };
+        });
 
         await db.update(coursesTable)
             .set({ courseContent: updatedCourseContent })

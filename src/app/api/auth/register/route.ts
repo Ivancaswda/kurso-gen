@@ -32,7 +32,8 @@ export async function POST(req: Request) {
             userName,
             email,
             password: hashed,
-            avatarUrl: null
+            avatarUrl: null,
+            credits: 1
 
         })
 
@@ -44,7 +45,8 @@ export async function POST(req: Request) {
                 email,
                 userName,
                 avatarUrl: null,
-                createdAt: new Date()
+                createdAt: new Date(),
+                credits: 1
             },
         })
 

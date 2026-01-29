@@ -29,13 +29,14 @@ export async function POST(req: Request) {
                 password: tempPassword,
                 avatarUrl,
                 createdAt: new Date(),
+                credits: 1
             });
         }
 
-        const jwtToken = generateToken({ email, userName });
+        const jwtToken = generateToken({ email, userName, credits: user?.credits });
 
         const res = NextResponse.json({
-            user: { email, userName, avatarUrl },
+            user: { email, userName, avatarUrl, credits: user?.credits },
             token: jwtToken,
         });
 

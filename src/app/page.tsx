@@ -5,17 +5,54 @@ import {Vortex} from "@/components/ui/vortex";
 import {MaskContainer} from "@/components/ui/svg-mask-effect";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import Footer from "@/components/Footer";
+import {GlowingEffect} from "@/components/ui/glowing-effect";
 import {useRouter} from "next/navigation";
-
+import FAQ from "@/components/Faq";
+import {PinContainer} from "@/components/ui/3d-pin";
+import {Box, Settings, Lock, Sparkles, Search} from "lucide-react";
+import Image from "next/image";
+import FloatingAssistant from "@/components/FloatingAssistant";
+const GridItem = ({ area, icon, title, description }: any) => {
+    return (
+        <li className={`min-h-[14rem] list-none ${area}`}>
+            <div className="relative h-full rounded-2xl border p-2 md:rounded-3xl md:p-3">
+                <GlowingEffect
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                />
+                <div className="border-0.75 relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-xl p-6 md:p-6 dark:shadow-[0px_0px_27px_0px_#2D2D2D]">
+                    <div className="relative flex flex-1 flex-col justify-between gap-3">
+                        <div className="w-fit rounded-lg border border-gray-600 p-2">
+                            {icon}
+                        </div>
+                        <div className="space-y-3">
+                            <h3 className="-tracking-4 pt-0.5 font-sans text-xl/[1.375rem] font-semibold text-balance text-black md:text-2xl/[1.875rem] dark:text-white">
+                                {title}
+                            </h3>
+                            <h2 className="font-sans text-sm/[1.125rem] text-black md:text-base/[1.375rem] dark:text-neutral-400 [&_b]:md:font-semibold [&_strong]:md:font-semibold">
+                                {description}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+    );
+};
 const Page = () => {
     const router = useRouter()
     return (
-        <div className="w-full flex flex-col overflow-hidden">
+        <div className="w-full relative min-h-screen flex flex-col overflow-hidden">
 
-            <div className="h-[90vh] flex flex-col items-center justify-center relative bg-gradient-to-b from-orange-600 via-orange-700 to-black text-white text-center">
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
-                    Learnify-AI
-                </h1>
+              <div className="h-[90vh] flex flex-col items-center justify-center relative bg-gradient-to-b from-orange-500 via-orange-500 to-black text-white text-center">
+                <div className=" bg-white rounded-xl  font-extrabold tracking-tight">
+
+                    <Image src="/logo.png" alt="logo22" width={220} height={220} />
+
+                </div>
                 <p className="mt-6 text-lg md:text-2xl max-w-2xl mx-auto text-neutral-200">
                     Инновационная школа будущего, где ИИ помогает учиться быстрее,
                     эффективнее и интереснее.
@@ -56,7 +93,43 @@ const Page = () => {
                     практику и получайте домашние задания.
                 </MaskContainer>
             </div>
+            <FAQ/>
+            <ul className="grid grid-cols-1 my-6 grid-rows-none gap-4 md:grid-cols-12 md:grid-rows-3 lg:gap-4 xl:max-h-[34rem] xl:grid-rows-2">
+                <GridItem
+                    area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
+                    icon={<Sparkles className="h-4 w-4 text-black dark:text-neutral-400" />}
+                    title="ИИ генерирует курсы под вас"
+                    description="Опишите цель обучения — КурсоГен автоматически создаст структуру курса, темы и учебный план."
+                />
 
+                <GridItem
+                    area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
+                    icon={<Box className="h-4 w-4 text-black dark:text-neutral-400" />}
+                    title="Интерактивные задания"
+                    description="После каждой темы вы получаете практические задания и упражнения для закрепления материала."
+                />
+
+                <GridItem
+                    area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
+                    icon={<Settings className="h-4 w-4 text-black dark:text-neutral-400" />}
+                    title="Гибкая настройка обучения"
+                    description="Меняйте сложность, пересоздавайте темы и адаптируйте курс под свой уровень и темп."
+                />
+
+                <GridItem
+                    area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
+                    icon={<Lock className="h-4 w-4 text-black dark:text-neutral-400" />}
+                    title="Персональный прогресс"
+                    description="Ваши курсы, задания и результаты сохраняются — обучение всегда под контролем."
+                />
+
+                <GridItem
+                    area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
+                    icon={<Search className="h-4 w-4 text-black dark:text-neutral-400" />}
+                    title="Раздаточные материалы и ДЗ"
+                    description="ИИ формирует конспекты, дополнительные материалы и домашние задания для глубокого понимания."
+                />
+            </ul>
 
             <div className="w-full h-[60vh] overflow-hidden">
                 <Vortex
@@ -67,7 +140,7 @@ const Page = () => {
                     className="flex flex-col items-center justify-center px-4 md:px-10 py-6 w-full h-full"
                 >
                     <h2 className="text-white text-3xl md:text-5xl font-bold text-center">
-                        Почему именно Learnify-AI?
+                        Почему именно КурсоГен?
                     </h2>
                     <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full">
                         <Card className="bg-white/10 backdrop-blur-md border border-white/20 text-white">
@@ -89,10 +162,10 @@ const Page = () => {
                         </Card>
                         <Card className="bg-white/10 backdrop-blur-md border border-white/20 text-white">
                             <CardHeader>
-                                <CardTitle>Практические проекты</CardTitle>
+                                <CardTitle>Раздаточный материал</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                Создавайте реальные проекты и портфолио вместе с Learnify-AI.
+                               КурсоГен ИИ дает вам материал для повторения чтобы полностью закрепить пройденный урок
                             </CardContent>
                         </Card>
                     </div>
@@ -102,7 +175,7 @@ const Page = () => {
 
             <div className="h-[30rem] w-full bg-gradient-to-b from-black to-orange-800 flex flex-col items-center justify-center text-center px-4">
                 <h1 className="text-white text-3xl md:text-6xl font-bold mb-6">
-                    Присоединяйтесь к Learnify-AI
+                    Учись эффективно при помощи КурсоГен
                 </h1>
                 <p className="text-neutral-200 text-lg md:text-xl max-w-2xl">
                     Более <span className="text-orange-400 font-bold">200 студентов</span>{" "}
@@ -112,6 +185,32 @@ const Page = () => {
                     Зарегистрироваться
                 </button>
             </div>
+            <div className="h-[40rem] w-full flex items-center justify-center ">
+                <PinContainer
+                    title="Teethify AI"
+                    href="https://teethify-ai.vercel.app"
+                >
+                    <div className="flex basis-full flex-col p-4 tracking-tight sm:basis-1/2 w-[22rem] h-[22rem] bg-black/40 rounded-xl">
+                        <h3 className="font-bold text-lg text-white">
+                            Teethify AI
+                        </h3>
+
+                        <p className="mt-2 text-sm text-neutral-300">
+                            Умный ИИ-доктор для диагностики зубов и быстрой онлайн-записи в клинику.
+                        </p>
+
+                        <div className="relative mt-4 flex-1 rounded-lg overflow-hidden">
+                            <Image
+                                src="/teethify.png"
+                                alt="Teethify AI preview"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                    </div>
+                </PinContainer>
+            </div>
+            <FloatingAssistant/>
             <Footer/>
         </div>
     )

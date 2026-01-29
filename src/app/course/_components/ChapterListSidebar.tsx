@@ -1,80 +1,59 @@
 import React, { useContext } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SelectedChapterContext } from "../../../../context/SelectedChapterContext";
-import { CheckCircleIcon, Loader2Icon } from "lucide-react";
-import { useParams } from 'next/navigation';
-import {LoaderOne} from "@/components/ui/loader";
+import { LoaderOne } from "@/components/ui/loader";
+import {cn} from "@/lib/utils";
 
-const ChapterListSidebar = ({ course, enrolledCourse }: any) => {
+const ChapterListSidebar = ({ course, groupIndex, enrolledCourse }: any) => {
     const { selectedChapter, setSelectedChapter } = useContext(SelectedChapterContext);
-    const completedChapter = enrolledCourse?.completedChapters;
 
-    const { group } = useParams();
-
-
-    if (!course?.courseContent || course?.courseContent.length === 0) {
+    if (!course?.courseContent || course.courseContent.length === 0) {
         return (
-            <div className='flex items-center flex-col gap-4 h-screen justify-center w-full'>
-                <LoaderOne  />
+            <div className='flex items-center w-screen flex-col gap-4 h-screen justify-center '>
+                <LoaderOne />
                 Загружаем данные...
             </div>
         );
     }
 
-
-
-    const handleChapterClick = ( chapterIndex: number) => {
-        setSelectedChapter(chapterIndex);
-    };
-
-
+    const currentChapter = course?.courseContent?.[groupIndex];
+    const topics = currentChapter?.courseData?.topics || [];
+    console.log('enrolledCourse===')
+    const completedChapters = enrolledCourse?.completedChapters || [];
+    console.log(enrolledCourse.completedChapters)
     return (
         <div className="w-80 bg-secondary p-5">
             <Accordion type="single" collapsible>
+                {topics.map((topic, index) => {
+                    console.log("groupIndex=== ", groupIndex)
+                    console.log("index===",index)
 
-                {course?.courseContent[group]?.map((chapterGroup, chapterIndex) => (
-                    <div key={chapterIndex}>
+                    const isCompleted = completedChapters.some(
+                        (item: any) => item.group == Number(groupIndex) && item.chapter == index
+                    );
+
+                    return (
+
                         <AccordionItem
-                            onClick={() => handleChapterClick(chapterIndex)}
-                            value={`chapter-${chapterIndex}`}
+                            key={index}
+                            value={`topic-${index}`}
+                            className={cn(
+                                selectedChapter === index && 'bg-orange-100',
+                                isCompleted && 'bg-green-100'
+                            )}
+                            onClick={() => setSelectedChapter(index)}
                         >
-
-                            <AccordionTrigger
-                                className={`text-lg font-medium px-5 ${
-                                    completedChapter?.some(
-                                        (item: any) => item.group === parseInt(group) && item.chapter === chapterIndex
-                                    )
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-white'
-                                }`}
-                            >
-                                <span>{chapterIndex + 1}.</span>
-                                {chapterGroup?.courseData?.topics[0].topic  || chapterGroup?.courseData?.topic}
-
+                            <AccordionTrigger className="text-lg font-medium px-5 ">
+                                {index + 1}. {topic.topic}
                             </AccordionTrigger>
                             <AccordionContent>
-                                <div>
-                                    {chapterGroup?.courseData?.topics?.map((topic, topicIndex) => (
-                                        <h2
-                                            key={topicIndex}
-                                            className={`p-3 my-1 rounded-lg ${
-                                                completedChapter?.some(
-                                                    (item: any) =>
-                                                        item.group === parseInt(group) &&
-                                                        item.chapter === chapterIndex
-                                                )
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-white'
-                                            }`}
-                                        >
-                                            {topic?.topic}
-                                        </h2>
-                                    ))}
-                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Нажмите, чтобы открыть тему
+                                </p>
                             </AccordionContent>
                         </AccordionItem>
-                    </div>
-                ))}
+                    );
+                })}
             </Accordion>
         </div>
     );

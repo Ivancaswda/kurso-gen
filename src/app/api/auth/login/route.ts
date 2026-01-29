@@ -31,13 +31,14 @@ export async function POST(req: Request) {
             return Response.json({ error: "Invalid password" }, { status: 401 })
         }
 
-        const token = generateToken({ email: user.email, userName: user.userName })
+        const token = generateToken({ email: user.email, userName: user.userName, credits: user?.credits })
 
         const res = NextResponse.json({
             message: "Logged in",
             user: {
                 email: user.email,
                 userName: user.userName,
+                credits: user?.credits
             }
         })
 

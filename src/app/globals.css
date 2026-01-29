@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "tailwindcss";
 
+@theme inline {
+  --animate-scroll: scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite;
+
+  @keyframes scroll {
+    to {
+      transform: translate(calc(-50% - 0.5rem));
+    }
+  }
+}
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -119,4 +129,39 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+.lesson {
+  @apply flex flex-col gap-8;
+}
+
+.lesson-block {
+  @apply flex flex-col gap-3;
+}
+
+.lesson-title {
+  @apply text-2xl font-bold text-gray-800 mt-6;
+}
+
+.lesson-subtitle {
+  @apply text-lg font-semibold text-gray-700 mt-4;
+}
+
+.lesson-callout {
+  @apply bg-blue-50 text-black border-l-4 border-blue-400 p-4 rounded-md text-sm;
+}
+
+.lesson-example {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto;
+}
+
+.lesson-tip {
+  @apply bg-green-50 border-l-4 border-green-400 p-4 rounded-md;
+}
+
+.lesson-summary {
+  @apply bg-orange-50 border border-orange-200 p-6 rounded-xl mt-8;
+}
+
+.lesson-summary h4 {
+  @apply text-lg font-semibold mb-3;
 }

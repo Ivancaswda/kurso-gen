@@ -5,7 +5,7 @@ import {
     ArrowDown,
     CheckCircleIcon,
     Loader2Icon,
-    PlayCircleIcon,
+    PlayCircleIcon, RefreshCcw,
     Settings2Icon,
     TriangleAlert,
     XIcon
@@ -31,12 +31,17 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import Image from "next/image";
 import {FaMagic} from "react-icons/fa";
+import ComfToReadContent from "@/app/course/_components/ComfToReadContent";
+import AILoadingDialog from "@/components/AiLoadingDialog";
 
-const ChapterContent = ({ course, refreshData, enrolledCourse }: any) => {
+const ChapterContent = ({ course, refreshData, enrolledCourse, getCourse }: any) => {
     const [loadingPractice, setLoadingPractice] = useState<boolean>(false)
     const { selectedChapter, setSelectedChapter } = useContext(SelectedChapterContext);
+    console.log('selectedChapter', selectedChapter + 1)
+    const [checking, setChecking] = useState<boolean>(false)
     const [practiceTask, setPracticeTask] = useState()
     const [onChecking, setOnChecking] = useState<boolean>(false)
+    const [isRegenerating, setIsRegenerating] = useState<boolean>(false)
     const [practiceAnswer, setPracticeAnswer] = useState()
     const [materials, setMaterials] = useState()
     const [timeLeft, setTimeLeft] = useState(30);
@@ -51,16 +56,16 @@ const ChapterContent = ({ course, refreshData, enrolledCourse }: any) => {
     const [loadingHomework, setLoadingHomework] = useState<boolean>(false);
     const [homework, setHomework] = useState<string | null>(null);
     const router = useRouter();
-    console.log(course)
+
     const { courseId, group} = params as { courseId: string; group: string };
 
     const groupIndex = parseInt(group) || 0;
 
 
     const completedChapter = enrolledCourse?.completedChapters || [];
-    const currentGroup = course?.courseContent?.[groupIndex]
+    const currentChapter = course?.courseContent?.[groupIndex]
 
-    const currentChapter = currentGroup?.[selectedChapter];
+
     const getMaterials = async () => {
         if (!enrolledCourse?.userEmail) return;
 
@@ -182,7 +187,8 @@ setCardLoading(true)
                 courseId,
                 completedChapter: updated
             })
-            refreshData()
+
+            await refreshData()
         } finally {
             setLoading(false)
         }
@@ -224,19 +230,57 @@ setCardLoading(true)
             setHomework(res.data.homework);
             toast.success('Дз успешно сгенеровано!')
         } catch (err) {
-            toast.error("Ошибка генерации домашнего задания");
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message;
+            setLoadingHomework(false)
+            if (status === 503) {
+                toast.error(
+                    message || 'Gemini API недоступен. Попробуйте другой API ключ'
+                );
+            } else if (status === 401) {
+                toast.error('Вы не авторизованы');
+            } else {
+                toast.error(message || 'Ошибка генерации домашнего задания');
+            }
         } finally {
             setLoadingHomework(false);
         }
     };
 
     const checkAnswer = async (qIndex: number, question: any) => {
-        const res = await axios.post("/api/check-homework", {
-            userAnswer: userAnswers[qIndex],
-            correctAnswer: question.correctAnswer,
-            type: question.type,
-        });
-        setResults({ ...results, [qIndex]: res.data.correct });
+        try {
+            setChecking(true)
+            const res = await axios.post("/api/check-homework", {
+                userAnswer: userAnswers[qIndex],
+                correctAnswer: question.correctAnswer,
+                type: question.type,
+            });
+
+            if (res.data.aiError) {
+                toast.error(res.data.aiError);
+                setChecking(false)
+                setResults({ ...results, [qIndex]: null });
+            } else {
+                setChecking(false)
+                setResults({ ...results, [qIndex]: res.data.correct });
+            }
+        } catch (err) {
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message;
+
+            if (status === 503) {
+                toast.error(
+                    message || 'Gemini API недоступен. Попробуйте другой API ключ'
+                );
+            } else if (status === 401) {
+                toast.error('Вы не авторизованы');
+            } else {
+                toast.error(message || 'Ошибка генерации проверки задания');
+            }
+            setChecking(false)
+
+            setResults({ ...results, [qIndex]: null });
+        }
     };
 
     const handleSaveHomework = async () => {
@@ -271,7 +315,19 @@ setCardLoading(true)
             setMaterials(res.data.materials);
             toast.success('Материал успешно сгенерован!')
         } catch (err) {
-            toast.error("Ошибка генерации разд. материала");
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message;
+
+            if (status === 503) {
+                toast.error(
+                    message || 'Gemini API недоступен. Попробуйте другой API ключ'
+                );
+            } else if (status === 401) {
+                toast.error('Вы не авторизованы');
+            } else {
+                toast.error(message || 'Ошибка генерации разд. материала');
+            }
+
             setLoadingMaterials(false)
         } finally {
             setLoadingMaterials(false);
@@ -307,9 +363,21 @@ setCardLoading(true)
             });
 
 
-            toast.success('Practice task успешно сгенеровано!')
+            toast.success('Практическое задание успешно сгенеровано!')
         } catch (err) {
-            toast.error("Ошибка генерации save-practice-task task");
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message;
+            setLoadingPractice(false)
+            if (status === 503) {
+                toast.error(
+                    message || 'Gemini API недоступен. Попробуйте другой API ключ'
+                );
+            } else if (status === 401) {
+                toast.error('Вы не авторизованы');
+            } else {
+                toast.error(message || "Ошибка генерации save-practice-task task");
+            }
+
         } finally {
             setLoadingPractice(false);
         }
@@ -347,10 +415,11 @@ setCardLoading(true)
         }
     };
 
-
-
+    console.log('course===')
+    console.log(course.courseContent)
     return (
         <div className="p-10">
+            <AILoadingDialog open={isRegenerating}/>
             <div className="flex justify-between items-center">
                 <h2 className="font-semibold text-2xl">
                     {selectedChapter + 1}. {currentChapter?.courseData?.chapterName}
@@ -359,19 +428,22 @@ setCardLoading(true)
                 {!isChapterCompleted ? (
                     <Button className='bg-orange-500 hover:bg-orange-600 text-white hover:text-white' disabled={loading} onClick={markChapterCompleted}>
                         {loading ? <Loader2Icon className="animate-spin" /> : <CheckCircleIcon />}
-                        Отметить как законченное
+
+                        {loading ? 'Подождите...' : 'Отметить как законченное'}
+
                     </Button>
                 ) : (
                     <Button className='bg-orange-500 hover:bg-orange-600 text-white hover:text-white' disabled={loading} variant="outline" onClick={markInCompleteChapter}>
                         {loading ? <Loader2Icon className="animate-spin" /> : <XIcon />}
-                        Отметить как незаконченное
+                        {loading ? 'Подождите...' : 'Отметить как незаконченное'}
+
                     </Button>
                 )}
             </div>
 
 
             <div className="my-5 flex gap-3">
-                {course?.courseContent?.map((_, gIndex) => (
+                {course?.courseJson.course.chapters?.map((_, gIndex) => (
                     <Button
                         className={cn('bg-white text-black border border-gray-400 ', gIndex === groupIndex  && 'bg-orange-500 text-white' )}
                         key={gIndex}
@@ -404,305 +476,154 @@ setCardLoading(true)
 
 
             {(currentChapter?.courseData?.topics?.length > 0 || currentChapter?.courseData?.topic) && (
-                <div className="mt-10 bg-secondary w-full rounded-2xl px-4">
+                <div className="mt-10 bg-secondary relative w-full rounded-2xl px-4">
                     <Accordion type="single" collapsible>
-                        {currentChapter.courseData.topics?.map((item, index) => (
-                            <AccordionItem key={index} value={`topic-${index}`}>
+
+                        {currentChapter?.courseData?.topics?.[selectedChapter] && (
+                            <AccordionItem value={`topic-${selectedChapter}`}>
                                 <AccordionTrigger>
-                                    {index + 1}. {item.topic}
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className='flex items-center gap-4' style={{ lineHeight: "2.5" }}>
-                                        {item.content.split(/```(.*?)\n([\s\S]*?)```/g).map((part, i) => {
-
-                                            if (i % 3 === 1) {
-                                                const language = part; // язык программирования
-                                                const code = item.content.split(/```.*?\n([\s\S]*?)```/g)[1];
-                                                return (
-                                                    <SyntaxHighlighter
-                                                        key={i}
-                                                        language={language || 'javascript'}
-                                                        style={materialDark}
-                                                        wrapLines
-                                                    >
-                                                        {code}
-                                                    </SyntaxHighlighter>
-                                                );
-                                            }
-
-                                            if (i % 3 === 0) return <p key={i} dangerouslySetInnerHTML={{ __html: part }} />;
-                                            return null;
-                                        })}
-                                    </div>
-                                    <div
-                                        style={{ lineHeight: "2.5" }}
-                                        dangerouslySetInnerHTML={{ __html: item.content }}
-                                    />
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-
-                        {currentChapter.courseData.topic && (
-                            <AccordionItem value="first-topic">
-                                <AccordionTrigger>{currentChapter.courseData.topic}</AccordionTrigger>
-
-                                <AccordionContent>
-                                    <div style={{ lineHeight: "2.5" }}>
-                                        {currentChapter.courseData.content.split(/```(.*?)\n([\s\S]*?)```/g).map((part, i) => {
-
-                                            if (i % 3 === 1) {
-                                                const language = part;
-                                                const code = currentChapter.courseData.content.split(/```.*?\n([\s\S]*?)```/g)[1];
-                                                return (
-                                                    <SyntaxHighlighter
-                                                        key={i}
-                                                        language={language || 'javascript'}
-                                                        style={materialDark}
-                                                        wrapLines
-                                                    >
-                                                        {code}
-                                                    </SyntaxHighlighter>
-                                                );
-                                            }
-
-                                            if (i % 3 === 0) return <p key={i} dangerouslySetInnerHTML={{ __html: part }} />;
-                                            return null;
-                                        })}
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        )}
-
-                        <div className="flex items-start gap-4 flex-wrap mt-6">
-                            {(cardLoading) && (
-                                <div className="flex items-start gap-4 flex-wrap mt-6">
-                                    {[1, 2, 3].map((_, i) => (
-                                        <Card
-                                            key={i}
-                                            className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200"
-                                        >
-                                            <CardHeader>
-                                                <Skeleton className="h-6 w-40 rounded-md" />
-                                            </CardHeader>
-                                            <CardContent className="flex flex-wrap items-center gap-4">
-                                                <Skeleton className="h-[120px] w-[120px] rounded-lg" />
-                                                <Skeleton className="h-10 w-44 rounded-lg" />
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            )}
-                            {!homework && !cardLoading  && (
-                                <Card className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200">
-
-                                    <CardContent className="flex flex-col items-center gap-4">
-                                        {
-                                            loadingHomework ? <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
-                                                <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
-                                                Идет генерация...
-                                            </div> : <Image
-                                                src="/homework.png"
-                                                alt="materials"
-                                                width={120}
-                                                height={120}
-                                                className="rounded-lg w-full h-[200px] object-cover"
-                                            />
-                                        }
+                                    {selectedChapter + 1}. {currentChapter.courseData.topics[selectedChapter].topic}
+                                    {/* Кнопка перегенерации, если тема временно недоступна */}
+                                    {currentChapter.courseData.topics[selectedChapter].content.includes("временно недоступен") && (
                                         <Button
-                                            className="bg-orange-500 hover:bg-orange-500 text-white"
-                                            disabled={loadingHomework}
-                                            onClick={generateHomework}
-                                        >
-                                            {loadingHomework ? (
-                                                <Loader2Icon className="animate-spin" />
-                                            ) : (
-
-                                                <p className='flex items-center gap-4'>   <FaMagic/>
-
-                                                    Сгенерировать вопросы</p>
-
-                                            )}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            )}
-                            {!materials && !cardLoading && (
-                                <Card className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200">
-
-                                    <CardContent className="flex flex-col items-center gap-4">
-                                        {
-                                           loadingMaterials ? <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
-                                                <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
-                                                Идет генерация...
-                                            </div> : <Image
-                                                src="/ai-courses.png"
-                                                alt="materials"
-                                                width={120}
-                                                height={120}
-                                                className="rounded-lg w-full h-[200px] object-cover"
-                                            />
-                                        }
-
-                                        <Button
-                                            className="bg-orange-500 hover:bg-orange-600 text-white"
-                                            disabled={loadingMaterials}
-                                            onClick={generateMaterials}
-                                        >
-                                            {loadingMaterials ? (
-                                                <Loader2Icon className="animate-spin" />
-                                            ) : (
-
-                                                <p className='flex items-center gap-4'>   <FaMagic/>
-
-                                                    Сгенерировать материалы</p>
-                                            )}
-                                        </Button>
-
-                                    </CardContent>
-
-                                </Card>
-                            )}
+                                            size="sm"
+                                            variant="outline"
+                                            className="ml-2 absolute z-20 right-2"
+                                            onClick={async () => {
+                                                try {
+                                                    setIsRegenerating(true);
+                                                    const res = await axios.post("/api/regenerate-topic", {
+                                                        courseId,
+                                                        chapterIndex: groupIndex,
+                                                        topicIndex: selectedChapter,
+                                                        apiKey: course.apiKey,
+                                                    });
 
 
-                            {!practiceTask && !cardLoading && (
-                                <Card className="w-full relative md:w-96 shadow-lg rounded-2xl border border-gray-200 ">
+                                                    if (res.data.newContent) {
+                                                        const updatedTopics = [...currentChapter.courseData.topics];
+                                                        updatedTopics[selectedChapter].content = res.data.newContent;
+                                                        currentChapter.courseData.topics = updatedTopics;
+                                                        toast.success("Тема успешно перегенерирована!");
+                                                        setSelectedChapter(selectedChapter); // триггерим ререндер
+                                                    }
+                                                } catch (err) {
+                                                    const status = error?.response?.status;
+                                                    const message = error?.response?.data?.message;
+                                                    setLoadingHomework(false)
+                                                    if (status === 503) {
+                                                        toast.error(
+                                                            message || 'Gemini API недоступен. Попробуйте другой API ключ'
+                                                        );
+                                                    } else if (status === 401) {
+                                                        toast.error('Вы не авторизованы');
+                                                    } else {
+                                                        toast.error(message || 'Ошибка перегенерации темы, попробуйте еще раз);')
+                                                    }
+                                                    setIsRegenerating(false)
+                                                    console.log(err);
 
-                                    <CardContent className="flex flex-col items-center gap-4">
-                                        {
-                                            loadingPractice ? <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
-                                                <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
-                                                Идет генерация...
-                                            </div> : <Image
-                                                src="/practice-tasks.png"
-                                                alt="materials"
-                                                width={120}
-                                                height={120}
-
-                                                className="rounded-lg w-full h-[200px] object-cover"
-                                            />
-                                        }
-                                        <Button
-                                            className="bg-orange-500 hover:bg-orange-600 text-white"
-                                            disabled={loadingPractice}
-                                            onClick={generatePracticeTask}
-                                        >
-                                            {loadingPractice ? (
-                                                <Loader2Icon className="animate-spin" />
-                                            ) : (
-                                                <p className='flex items-center gap-4'>   <FaMagic/>
-
-                                                    Сгенерировать практику</p>
-
-                                            )}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </div>
-                        {homework &&   <AccordionItem value="second-topic">
-                            <AccordionTrigger>2. Краткие вопросы</AccordionTrigger>
-
-                            <AccordionContent>
-                                <div className="mt-5 space-y-3">
-                                    {homework?.questions?.map((q, index) => (
-                                        <div key={index} className="p-4 border rounded-md my-2">
-                                            <p className="font-medium">{q.question}</p>
-
-                                            <input
-                                                type="text"
-                                                className="border p-2 w-full mt-2"
-                                                value={userAnswers[index] || ""}
-                                                onChange={(e) =>
-                                                    setUserAnswers({ ...userAnswers, [index]: e.target.value })
+                                                } finally {
+                                                    setIsRegenerating(false);
                                                 }
-                                            />
+                                            }}
+                                            disabled={isRegenerating}
+                                        >
+                                            <RefreshCcw /> Перегенерировать
+                                        </Button>
+                                    )}
+                                </AccordionTrigger>
 
-
-
-                                            <Button disabled={onChecking}
-                                                onClick={() => checkAnswer(index, q)}
-                                                className="mt-2 bg-orange-500"
-                                            >
-                                                {onChecking ?   <Loader2Icon className='animate-spin '/> : <CheckCircleIcon/>}
-
-                                                Проверить!
-                                            </Button>
-
-
-                                            {results[index] !== undefined && (
-                                                <p className={results[index] ? "text-green-600" : "text-red-600"}>
-                                                    {results[index] ? "Правильно ✅" : "Неправильно ❌"}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
-                                     <Button disabled={loadingHomework}
-                                                           className="mt-4 bg-green-600 text-white hover:bg-green-700"
-                                                           onClick={handleSaveHomework}
-                                    >
-                                        Сохранить ответы
-                                    </Button>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>}
-
-
-
-
-
-
-                        {!loadingMaterials && materials && (
-
-                                <AccordionItem value="third-topic">
-                                    <AccordionTrigger>3. Раздаточный материал</AccordionTrigger>
-
-                                    <AccordionContent>
-                                        <div className="mt-5 space-y-3">
-                                            <h3 className="font-bold">Чек-лист:</h3>
-                                            <ul>
-                                                {materials?.checklist.map((item, i) => <li key={i}>✅ {item}</li>)}
-                                            </ul>
-
-                                            <h3 className="font-bold">Карточки:</h3>
-                                            {materials?.flashcards.map((c, i) => (
-                                                <div key={i} className="p-2 border rounded">
-                                                    <p><b>В:</b> {c.q}</p>
-                                                    <p><b>О:</b> {c.a}</p>
-                                                </div>
-                                            ))}
-
-                                            <Button
-                                                className="bg-green-600 hover:bg-green-700 text-white"
-                                                onClick={() => downloadPDF(pdf)}
-                                            >
-                                                Скачать PDF
-                                            </Button>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-
+                                <AccordionContent>
+                                    <div className="px-2 md:px-6 py-4 bg-white rounded-xl shadow-sm">
+                                        <ComfToReadContent
+                                            html={currentChapter.courseData.topics[selectedChapter].content}
+                                        />
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
                         )}
 
 
+                        {homework && (
+                            <AccordionItem value="homework">
+                                <AccordionTrigger>Домашние задания</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="mt-5 space-y-3">
+                                        {homework?.questions?.map((q, index) => (
+                                            <div key={index} className="p-4 border rounded-md my-2">
+                                                <p className="font-medium">{q.question}</p>
+                                                <input
+                                                    type="text"
+                                                    className="border p-2 w-full mt-2"
+                                                    value={userAnswers[index] || ""}
+                                                    onChange={(e) =>
+                                                        setUserAnswers({ ...userAnswers, [index]: e.target.value })
+                                                    }
+                                                />
+                                                <Button
+                                                    disabled={checking}
+                                                    onClick={() => checkAnswer(index, q)}
+                                                    className="mt-2 bg-orange-500"
+                                                >
+                                                    {checking ? <Loader2Icon className="animate-spin" /> : <CheckCircleIcon />}
+                                                    {checking ? 'Подождите...' : 'Проверить'}
+                                                </Button>
+                                                {results[index] !== undefined && (
+                                                    <p className={results[index] ? "text-green-600" : "text-red-600"}>
+                                                        {results[index] ? "Правильно ✅" : "Неправильно ❌"}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                        <Button
+                                            disabled={loadingHomework}
+                                            className="mt-4 bg-green-600 text-white hover:bg-green-700"
+                                            onClick={handleSaveHomework}
+                                        >
+                                            Сохранить ответы
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
 
-                        {!practiceTask && loadingPractice &&  [1, 2, 3, 4, 5, 6, 7, 8, 9].map((item, index) => (
-                            <div key={index} className="flex flex-col space-y-3">
-                                <Skeleton className="h-[125px] w-[250px] rounded-xl"/>
-                                <div className="space-y-2">
-                                    <Skeleton className="h-4 w-[250px]"/>
-                                    <Skeleton className="h-4 w-[200px]"/>
-                                </div>
-                            </div>
-                        ))}
+
+                        {materials && !loadingMaterials && (
+                            <AccordionItem value="materials">
+                                <AccordionTrigger>Раздаточный материал</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="mt-5 space-y-3">
+                                        <h3 className="font-bold">Чек-лист:</h3>
+                                        <ul>
+                                            {materials?.checklist.map((item, i) => (
+                                                <li key={i}>✅ {item}</li>
+                                            ))}
+                                        </ul>
+                                        <h3 className="font-bold">Карточки:</h3>
+                                        {materials?.flashcards.map((c, i) => (
+                                            <div key={i} className="p-2 border rounded">
+                                                <p><b>В:</b> {c.q}</p>
+                                                <p><b>О:</b> {c.a}</p>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            onClick={() => downloadPDF(pdf)}
+                                        >
+                                            Скачать PDF
+                                        </Button>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
 
 
-                        {practiceTask &&   <AccordionItem value="single-topic">
-                            <AccordionTrigger>4. Практическое задание:</AccordionTrigger>
-
-                            <AccordionContent>
-                                <>
+                        {practiceTask && (
+                            <AccordionItem value="practice">
+                                <AccordionTrigger>Практическое задание</AccordionTrigger>
+                                <AccordionContent>
                                     <p className="mb-3">{practiceTask.question}</p>
-
                                     <div className="mb-3 w-full max-w-3xl mx-auto">
                                         <Editor
                                             height="400px"
@@ -712,35 +633,144 @@ setCardLoading(true)
                                             theme="vs-dark"
                                         />
                                     </div>
-                                    {onChecking && <div className='flex  flex-col gap-4 items-center justify-center'>
-                                        <LoaderOne/>
-                                        <div className='font-semibold'>
-                                            Идет проверка...
+                                    {onChecking && (
+                                        <div className="flex flex-col gap-4 items-center justify-center">
+                                            <LoaderOne />
+                                            <div className="font-semibold">Идет проверка...</div>
                                         </div>
-                                    </div>}
-
+                                    )}
                                     <div className="flex items-center justify-between mb-3">
-
-                                        <Button disabled={onChecking}
+                                        <Button
+                                            disabled={onChecking}
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={checkPracticeAnswer}
                                         >
-                                            {onChecking ? <Loader2Icon className='animate-spin '/> : <CheckCircleIcon/>}
-
+                                            {onChecking ? <Loader2Icon className="animate-spin" /> : <CheckCircleIcon />}
                                             Проверить
                                         </Button>
                                     </div>
-
                                     {status === "success" && <p className="text-green-600 font-bold">✅ Правильно!</p>}
                                     {status === "fail" && <p className="text-red-600 font-bold">❌ Неправильно</p>}
-                                </>
-                            </AccordionContent>
-                        </AccordionItem>}
-
-                </Accordion>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
+                    </Accordion>
 
                 </div>
             )}
+
+            <div className="flex items-start gap-4 flex-wrap mt-6">
+                {/* Загрузка карточек skeleton */}
+                {cardLoading && (
+                    [1, 2, 3].map((_, i) => (
+                        <Card
+                            key={i}
+                            className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200"
+                        >
+                            <CardHeader>
+                                <Skeleton className="h-6 w-40 rounded-md" />
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap items-center gap-4">
+                                <Skeleton className="h-[120px] w-[120px] rounded-lg" />
+                                <Skeleton className="h-10 w-44 rounded-lg" />
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+
+
+                {!homework && !cardLoading && (
+                    <Card className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200">
+                        <CardContent className="flex flex-col items-center gap-4">
+                            {loadingHomework ? (
+                                <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
+                                    <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
+                                    Идет генерация...
+                                </div>
+                            ) : (
+                                <Image
+                                    src="/homework.png"
+                                    alt="homework"
+                                    width={120}
+                                    height={120}
+                                    className="rounded-lg w-full h-[200px] object-cover"
+                                />
+                            )}
+                            <Button
+                                className="bg-orange-500 hover:bg-orange-500 text-white"
+                                disabled={loadingHomework}
+                                onClick={generateHomework}
+                            >
+                                {loadingHomework ? <Loader2Icon className="animate-spin" /> : (
+                                    <p className='flex items-center gap-4'><FaMagic /> Сгенерировать вопросы</p>
+                                )}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
+
+                {!materials && !cardLoading && (
+                    <Card className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200">
+                        <CardContent className="flex flex-col items-center gap-4">
+                            {loadingMaterials ? (
+                                <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
+                                    <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
+                                    Идет генерация...
+                                </div>
+                            ) : (
+                                <Image
+                                    src="/ai-courses.png"
+                                    alt="materials"
+                                    width={120}
+                                    height={120}
+                                    className="rounded-lg w-full h-[200px] object-cover"
+                                />
+                            )}
+                            <Button
+                                className="bg-orange-500 hover:bg-orange-600 text-white"
+                                disabled={loadingMaterials}
+                                onClick={generateMaterials}
+                            >
+                                {loadingMaterials ? <Loader2Icon className="animate-spin" /> : (
+                                    <p className='flex items-center gap-4'><FaMagic /> Сгенерировать материалы</p>
+                                )}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
+
+                {!practiceTask && !cardLoading && (
+                    <Card className="w-full md:w-96 shadow-lg rounded-2xl border border-gray-200">
+                        <CardContent className="flex flex-col items-center gap-4">
+                            {loadingPractice ? (
+                                <div className='flex flex-col h-full py-4 shrink-0 text-xl items-center text-orange-600 gap-4 font-semibold'>
+                                    <FaMagic className='text-orange-500 size-[60px] animate-bounce'/>
+                                    Идет генерация...
+                                </div>
+                            ) : (
+                                <Image
+                                    src="/practice-tasks.png"
+                                    alt="practice"
+                                    width={120}
+                                    height={120}
+                                    className="rounded-lg w-full h-[200px] object-cover"
+                                />
+                            )}
+                            <Button
+                                className="bg-orange-500 hover:bg-orange-600 text-white"
+                                disabled={loadingPractice}
+                                onClick={generatePracticeTask}
+                            >
+                                {loadingPractice ? <Loader2Icon className="animate-spin" /> : (
+                                    <p className='flex items-center gap-4'><FaMagic /> Сгенерировать практику</p>
+                                )}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
 
 
 

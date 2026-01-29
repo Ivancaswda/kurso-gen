@@ -5,7 +5,7 @@ import { db } from "../../../../configs/db";
 import { coursesTable } from "../../../../configs/schema";
 import { eq } from "drizzle-orm";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
         }
 
         const course = courses[0].courseJson?.course;
-
-
+        console.log('course===')
+        console.log(courses[0])
+        const genAI = new GoogleGenerativeAI(courses[0].apiKey);
 
 
 
@@ -53,17 +54,43 @@ export async function POST(req: NextRequest) {
     `;
 
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const result = await model.generateContent(prompt);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        let result;
+        try {
+            result = await model.generateContent(fullPrompt);
+        } catch (e: any) {
+            return NextResponse.json(
+                {
+                    error: "Gemini API error",
+                    message: "Проблема с Gemini API ключом или превышен лимит запросов"
+                },
+                { status: 503 }
+            );
+        }
 
-        let rawResp = result.response.text().trim();
-        rawResp = rawResp.replace(/```json/g, "").replace(/```/g, "").trim();
+        const rawResp = result.response.text()?.trim();
+
+        if (!rawResp) {
+            throw new Error("Gemini вернул пустой ответ");
+        }
 
         const firstBrace = rawResp.indexOf("{");
         const lastBrace = rawResp.lastIndexOf("}");
+
+        if (firstBrace === -1 || lastBrace === -1) {
+            console.error("RAW GEMINI RESPONSE:", rawResp);
+            throw new Error("Ответ Gemini не содержит JSON");
+        }
+
         const jsonString = rawResp.substring(firstBrace, lastBrace + 1);
 
-        const practice = JSON.parse(jsonString);
+        let practice;
+        try {
+            practice = JSON.parse(jsonString);
+        } catch (e) {
+            console.error("JSON STRING:", jsonString);
+            throw new Error("Ошибка парсинга JSON от Gemini");
+        }
 
 
 

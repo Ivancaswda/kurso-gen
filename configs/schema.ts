@@ -5,7 +5,8 @@ export const usersTable = pgTable("users", {
     email: varchar({ length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: varchar(),
-    createdAt: timestamp("created_at").defaultNow().notNull()
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    credits: varchar()
 });
 
 
@@ -18,6 +19,7 @@ export const coursesTable = pgTable('courses', {
     includeVideo: boolean().default(false),
     label: varchar().notNull(),
     category: varchar(),
+    apiKey: varchar(),
     courseJson: json(),
     courseContent: json().default({}),
     bannerImageUrl: varchar().default(''),
