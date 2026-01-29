@@ -95,7 +95,7 @@ function Signup() {
 
                 {/* Лого */}
                 <div className="flex justify-center mb-6">
-                    <Image src="/logo.png" alt="Lingvify Logo" className='rounded-xl' width={64} height={64}/>
+                    <Image src="/logo.png" alt="Lingvify Logo" className='rounded-xl' width={124} height={124}/>
                 </div>
 
                 <h2 className="text-2xl font-bold text-center text-orange-700 dark:text-orange-300">
