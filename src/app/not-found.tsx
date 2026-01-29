@@ -7,7 +7,7 @@ export default function NotFound() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
             <Link href={'/'} >
-                <Image src={'/logo.png'} width={120} height={120} className='w-[150px] rounded-2xl mb-6 h-[120px]' alt='logo' />
+                <Image src='/logo.png' width={120} height={120} className='w-[150px] rounded-2xl mb-6 h-[120px]' alt='logo' />
             </Link>
 
             <h1 className="text-4xl font-bold mb-4">
