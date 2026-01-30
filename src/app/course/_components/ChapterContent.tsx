@@ -230,8 +230,8 @@ setCardLoading(true)
             setHomework(res.data.homework);
             toast.success('Дз успешно сгенеровано!')
         } catch (err) {
-            const status = error?.response?.status;
-            const message = error?.response?.data?.message;
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message;
             setLoadingHomework(false)
             if (status === 503) {
                 toast.error(
@@ -265,8 +265,8 @@ setCardLoading(true)
                 setResults({ ...results, [qIndex]: res.data.correct });
             }
         } catch (err) {
-            const status = error?.response?.status;
-            const message = error?.response?.data?.message;
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message;
 
             if (status === 503) {
                 toast.error(
@@ -315,8 +315,8 @@ setCardLoading(true)
             setMaterials(res.data.materials);
             toast.success('Материал успешно сгенерован!')
         } catch (err) {
-            const status = error?.response?.status;
-            const message = error?.response?.data?.message;
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message;
 
             if (status === 503) {
                 toast.error(
@@ -365,8 +365,8 @@ setCardLoading(true)
 
             toast.success('Практическое задание успешно сгенеровано!')
         } catch (err) {
-            const status = error?.response?.status;
-            const message = error?.response?.data?.message;
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message;
             setLoadingPractice(false)
             if (status === 503) {
                 toast.error(
@@ -414,9 +414,23 @@ setCardLoading(true)
             setOnChecking(false)
         }
     };
+    function isInvalidContent(content: unknown): boolean {
+        if (!content) return true;
 
-    console.log('course===')
-    console.log(course.courseContent)
+        if (typeof content !== "string") return true;
+
+        if (content.trim().length === 0) return true;
+
+        if (content.includes("временно недоступен")) return true;
+
+        return false;
+    }
+    const topicContent =
+        currentChapter?.courseData?.topics?.[selectedChapter]?.content;
+
+    const shouldRegenerate = isInvalidContent(topicContent);
+    console.log('course1===')
+    console.log(currentChapter?.courseData)
     return (
         <div className="p-10">
             <AILoadingDialog open={isRegenerating}/>
@@ -483,8 +497,8 @@ setCardLoading(true)
                             <AccordionItem value={`topic-${selectedChapter}`}>
                                 <AccordionTrigger>
                                     {selectedChapter + 1}. {currentChapter.courseData.topics[selectedChapter].topic}
-                                    {/* Кнопка перегенерации, если тема временно недоступна */}
-                                    {currentChapter.courseData.topics[selectedChapter].content.includes("временно недоступен") && (
+
+                                    {shouldRegenerate && (
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -508,8 +522,8 @@ setCardLoading(true)
                                                         setSelectedChapter(selectedChapter); // триггерим ререндер
                                                     }
                                                 } catch (err) {
-                                                    const status = error?.response?.status;
-                                                    const message = error?.response?.data?.message;
+                                                    const status = err?.response?.status;
+                                                    const message = err?.response?.data?.message;
                                                     setLoadingHomework(false)
                                                     if (status === 503) {
                                                         toast.error(

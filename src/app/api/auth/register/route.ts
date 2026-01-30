@@ -33,11 +33,12 @@ export async function POST(req: Request) {
             email,
             password: hashed,
             avatarUrl: null,
-            credits: 1
+            credits: 1,
+            stripeCustomerId: ''
 
         })
 
-        const token = generateToken({ email, userName })
+        const token = generateToken({ email, userName, credits: 1, stripeCustomerId: '' })
 
         const res = NextResponse.json({
             message: "Registered",
@@ -46,7 +47,8 @@ export async function POST(req: Request) {
                 userName,
                 avatarUrl: null,
                 createdAt: new Date(),
-                credits: 1
+                credits: 1,
+                stripeCustomerId: ''
             },
         })
 

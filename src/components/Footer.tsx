@@ -11,7 +11,7 @@ const Footer = () => {
 
                 <div className="space-y-3 ">
                     <div className='bg-white rounded-2xl p-3'>
-                        <Image src='/logo.png' alt='logo' width={60} height={60} className='w-[70px] h-[70px]' />
+                        <Image src='/logo.png' alt='logo' width={110} height={110} className='w-[110px] h-[80px]' />
                     </div>
                      <p className="text-sm">
                         Создавайте курсы с помощью ИИ и изучайте любые темы легко и интересно.

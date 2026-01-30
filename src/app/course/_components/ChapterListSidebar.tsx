@@ -22,7 +22,7 @@ const ChapterListSidebar = ({ course, groupIndex, enrolledCourse }: any) => {
     const completedChapters = enrolledCourse?.completedChapters || [];
     console.log(enrolledCourse.completedChapters)
     return (
-        <div className="w-80 bg-secondary p-5">
+        <div className="w-80 bg-secondary p-5  sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
             <Accordion type="single" collapsible>
                 {topics.map((topic, index) => {
                     console.log("groupIndex=== ", groupIndex)

@@ -8,7 +8,7 @@ export const sidebarLinks = [
     { label: "Панель управления", href: "/dashboard" },
     { label: "Моё обучение", href: "/workspace/my-learning" },
     { label: "Изучить курсы", href: "/workspace/explore" },
-    { label: "Приобрести VIP", href: "/vip" },
+    { label: "Приобрести Звезды", href: "/pricing" },
     { label: "Профиль", href: "/workspace/profile" },
 ]
 const Sidebar = ({ isOpen, toggle }: any) => {

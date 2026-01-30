@@ -54,7 +54,7 @@ ${JSON.stringify({ chapterName, topic }, null, 0)}
 
     let result;
     try {
-        result = await model.generateContent(fullPrompt);
+        result = await model.generateContent(input);
     } catch (e: any) {
         return NextResponse.json(
             {

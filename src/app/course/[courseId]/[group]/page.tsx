@@ -136,11 +136,11 @@ const CoursePage = () => {
         }
     };
     return (
-        <div className='max-h-screen'>
+        <div className='max-h-screen relative'>
             <AILoadingDialog open={isGenerating} />
             <div className="flex gap-3 justify-between p-4">
                 <Link href="/dashboard" >
-                    <Image alt='logo' src='/logo.png' width={120} height={120} className='w-[60px] h-[60px]'/>
+                    <Image alt='logo' src='/logo.png' width={120} height={120} className='w-[120px] h-[70px]'/>
                 </Link>
                 <div className="flex items-center gap-3 lg:hidden">
                     <Sheet>

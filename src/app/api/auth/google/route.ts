@@ -29,14 +29,15 @@ export async function POST(req: Request) {
                 password: tempPassword,
                 avatarUrl,
                 createdAt: new Date(),
-                credits: 1
+                credits: 1,
+                stripeCustomerId: ""
             });
         }
 
-        const jwtToken = generateToken({ email, userName, credits: user?.credits });
+        const jwtToken = generateToken({ email, userName, credits: user?.credits, stripeCustomerId: user?.stripeCustomerId });
 
         const res = NextResponse.json({
-            user: { email, userName, avatarUrl, credits: user?.credits },
+            user: { email, userName, avatarUrl, credits: user?.credits, stripeCustomerId: user?.stripeCustomerId },
             token: jwtToken,
         });
 

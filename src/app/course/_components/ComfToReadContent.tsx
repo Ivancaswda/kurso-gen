@@ -1,17 +1,21 @@
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { materialDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-
 type Props = {
-    html: string;
+    html: unknown; // ⬅️ важно
 };
 
 const ComfToReadContent = ({ html }: Props) => {
+    if (typeof html !== "string" || html.trim().length === 0) {
+        return (
+            <div className="text-gray-500 italic">
+                Контент временно недоступен. Попробуйте перегенерировать.
+            </div>
+        );
+    }
+
     const parts = html.split(/```(\w+)?\n([\s\S]*?)```/g);
 
     return (
         <div className="prose prose-lg max-w-none prose-p:leading-relaxed prose-p:mb-4 prose-ul:my-4 prose-li:mb-2 prose-strong:text-gray-900">
             {parts.map((part, i) => {
-                // code block
                 if (i % 3 === 2) {
                     const language = parts[i - 1] || "javascript";
                     return (
@@ -31,7 +35,6 @@ const ComfToReadContent = ({ html }: Props) => {
                     );
                 }
 
-                // normal html
                 if (i % 3 === 0) {
                     return (
                         <div

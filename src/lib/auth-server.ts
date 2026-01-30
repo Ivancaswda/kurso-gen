@@ -14,7 +14,9 @@ async function getServerUser() {
         const decoded = jwt.verify(token, JWT_SECRET) as {
             email: string,
             userName: string,
-            id: string
+            id: string,
+            credits: number,
+            stripeCustomerId: string
         }
         return decoded!
     } catch (err) {

@@ -86,7 +86,7 @@ export default function PricingPage() {
                 </div>
 
                 <div className="mt-20 text-center text-gray-500 text-sm">
-                    * 1 кредит = 1 генерация контента. Кредиты не сгорают.
+                    * 1 звезда = 1 генерация контента. Звезды не сгорают.
                 </div>
             </div>
         </div>

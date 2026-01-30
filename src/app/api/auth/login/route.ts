@@ -31,7 +31,8 @@ export async function POST(req: Request) {
             return Response.json({ error: "Invalid password" }, { status: 401 })
         }
 
-        const token = generateToken({ email: user.email, userName: user.userName, credits: user?.credits })
+        const token = generateToken({ email: user.email, userName: user.userName, credits: user?.credits,
+            stripeCustomerId: user?.stripeCustomerId })
 
         const res = NextResponse.json({
             message: "Logged in",
