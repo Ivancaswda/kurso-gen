@@ -49,7 +49,7 @@ export default function PricingPage() {
                         Выберите свой <span className="text-primary">план</span>
                     </h1>
                     <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                        Покупайте звезды для создания сайтов с помощью Websity.
+                        Покупайте звезды для генерации уроков с КурсоГен.
                         Больше звезд — выгоднее!
                     </p>
                 </div>

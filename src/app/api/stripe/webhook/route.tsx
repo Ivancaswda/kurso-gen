@@ -9,6 +9,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-08
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: NextRequest) {
+    try {
+
+
     const sig = req.headers.get("stripe-signature")!;
     const body = await req.text();
 
@@ -22,29 +25,41 @@ export async function POST(req: NextRequest) {
     }
     console.log('stripe-outside===')
 
-    if (event.type === "checkout.session.completed") {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const credits = Number(session.metadata?.credits);
-        console.log("stripeInside===")
-        console.log('session===', session)
+        if (event.type === "checkout.session.completed") {
+            const session = event.data.object as Stripe.Checkout.Session;
 
-        console.log('userId===', userId)
+            const customerId = session.customer as string;
+            const credits = Number(session.metadata?.credits);
 
-        if (userId && credits) {
-            console.log('oldCredits===')
-            const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+            if (!customerId || isNaN(credits)) {
+                console.warn("Нет customerId или credits");
+                return NextResponse.json({ received: true });
+            }
+
+            const user = await db
+                .select()
+                .from(usersTable)
+                .where(eq(usersTable.stripeCustomerId, customerId))
+                .limit(1);
 
             if (!user[0]) {
-                console.warn(`Пользователь с id ${userId} не найден`);
-            } else {
-                console.log('newCredits===')
-                const newCredits = (user[0].credits || 0) + credits;
-                await db.update(usersTable).set({ credits: newCredits }).where(eq(usersTable.id, userId)).execute();
-                console.log(`✅ Добавлено ${credits} кредитов пользователю ${user[0].email}`);
+                console.warn(`Пользователь с customerId ${customerId} не найден`);
+                return NextResponse.json({ received: true });
             }
+
+            const newCredits = (user[0].credits || 0) + credits;
+
+            await db
+                .update(usersTable)
+                .set({ credits: newCredits })
+                .where(eq(usersTable.id, user[0].id));
+
+            console.log(`✅ Добавлено ${credits} кредитов пользователю ${user[0].email}`);
         }
-    }
 
     return NextResponse.json({ received: true });
+    } catch (error) {
+        console.log(error)
+        return  NextResponse.json({ error: "Stripe webhook server error" }, { status: 500 });
+    }
 }
