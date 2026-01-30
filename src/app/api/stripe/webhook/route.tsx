@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ received: true });
             }
 
-            const newCredits = (user[0].credits || 0) + credits;
+            const newCredits = Number(user[0].credits || 0) + Number(credits);
 
             await db
                 .update(usersTable)

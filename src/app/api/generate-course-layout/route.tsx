@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "../../../../configs/db";
-import { coursesTable } from "../../../../configs/schema";
+import {coursesTable, usersTable} from "../../../../configs/schema";
 import getServerUser from "@/lib/auth-server";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
+import {eq} from "drizzle-orm";
 
 const PROMPT = `
 Сгенерируй учебный курс на основе следующих данных. 
@@ -63,9 +64,22 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.json();
         const user = await getServerUser();
+        const users = await db.select().from(usersTable).where(eq(usersTable.email, user.email)).limit(1)
 
-        if (!user) {
+        const Curuser = users[0]
+        if (!Curuser) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        console.log(user)
+
+        if (Number(Curuser.credits) < 1) {
+            return NextResponse.json(
+                {
+                    error: "NO_CREDITS",
+                    message: "У вас закончились кредиты. Пополните баланс."
+                },
+                { status: 402 }
+            );
         }
 
         const genAI = new GoogleGenerativeAI(formData.apiKey);
@@ -121,12 +135,17 @@ export async function POST(req: NextRequest) {
         await db.insert(coursesTable).values({
             ...formData,
             courseJson: jsonResp,
-            userEmail: user.email,
+            userEmail: Curuser.email,
             cid,
             label: jsonResp.course.name,
             bannerImageUrl,
         });
-
+        await db
+            .update(usersTable)
+            .set({
+                credits: (Curuser?.credits ?? 0) - 1,
+            })
+            .where(eq(usersTable.email, Curuser.email));
         return NextResponse.json({ courseId: cid });
     } catch (err: any) {
         console.error("❌ generate-course-layout error:", err);

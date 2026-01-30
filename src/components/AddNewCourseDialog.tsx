@@ -61,19 +61,27 @@ const AddNewCourseDialog = ({children} :any) => {
 
             console.log(result.data)
         router.push(`/workspace/edit-course/${result.data.courseId}`)
-        }catch (error: any) {
+        } catch (error: any) {
             const status = error?.response?.status;
             const message = error?.response?.data?.message;
 
-            if (status === 503) {
-                toast.error(
-                    message || 'Gemini API недоступен. Попробуйте другой API ключ'
-                );
-            } else if (status === 401) {
-                toast.error('Вы не авторизованы');
-            } else {
-                toast.error(message || 'Ошибка генерации курса');
+            if (status === 402) {
+                toast.error("У вас закончились звезды 😢");
+                setLoading(false)
+                return;
             }
+
+            if (status === 503) {
+                toast.error(message || "Gemini API недоступен");
+                setLoading(false)
+            } else if (status === 401) {
+                setLoading(false)
+                toast.error("Вы не авторизованы");
+            } else {
+                setLoading(false)
+                toast.error(message || "Ошибка генерации курса");
+            }
+            setLoading(false)
         }
         setLoading(false)
     }

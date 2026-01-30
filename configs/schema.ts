@@ -6,7 +6,7 @@ export const usersTable = pgTable("users", {
     password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: varchar(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    credits: varchar(),
+    credits: integer(),
     stripeCustomerId: varchar()
 });
 
