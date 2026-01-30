@@ -27,9 +27,14 @@ export async function POST(req: NextRequest) {
         const userId = session.metadata?.userId;
         const credits = Number(session.metadata?.credits);
         console.log("stripeInside===")
+        console.log('session===', session.metadata)
+
+        console.log('userId===', userId)
+
         if (userId && credits) {
             console.log('oldCredits===')
             const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+
             if (!user[0]) {
                 console.warn(`Пользователь с id ${userId} не найден`);
             } else {
