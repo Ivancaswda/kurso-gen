@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
             success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/success`,
             cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/failure`,
         });
+        console.log('session===', session)
 
         return NextResponse.json({ url: session.url });
     } catch (err) {

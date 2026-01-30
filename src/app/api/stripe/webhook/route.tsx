@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         const userId = session.metadata?.userId;
         const credits = Number(session.metadata?.credits);
         console.log("stripeInside===")
-        console.log('session===', session.metadata)
+        console.log('session===', session)
 
         console.log('userId===', userId)
 
