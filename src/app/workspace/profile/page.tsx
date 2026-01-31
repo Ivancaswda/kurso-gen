@@ -21,6 +21,7 @@ import {toast} from "sonner";
 import Image from "next/image";
 import {Button} from "@/components/ui/button";
 import {useRouter} from "next/navigation";
+import {StarsIcon} from "lucide-react";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend);
 
@@ -165,6 +166,25 @@ export default function ProfilePage() {
                     <p className="text-gray-500">{user.email}</p>
                 </div>
             </Card>
+            <div className="mt-10">
+                <h2 className="font-bold text-lg px-6">Мои звезды</h2>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-6 mt-4">
+
+                            <Card
+
+                                className="flex gap-4 items-center justify-center p-4 shadow-md"
+                            >
+                                <CardTitle className="mt-2 text-center"><StarsIcon/></CardTitle>
+                                <p className="text-sm text-neutral-500 text-center">
+                                    {user?.credits}
+
+                                </p>
+                            </Card>
+
+                    </div>
+
+            </div>
             <div className="mt-10">
                 <h2 className="font-bold text-lg px-6">Мои награды</h2>
                 {badges.length === 0 ? (
